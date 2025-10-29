@@ -1,0 +1,36 @@
+(ns cljd-utils.http
+  (:require 
+   ["package:http/http.dart" :as http]
+   ["dart:convert" :as convert]
+   ["dart:core" :as c]
+   [clojure.string :as str]))
+
+(defn query-params-to-str [params]
+  (str/join "&" (map (fn [[k v]] (str k "=" v)) params)))
+
+(defn get-data [url {:keys [headers params success error catch-error]}]
+  (-> 
+      (http/get (c.Uri/parse (str url "?" (query-params-to-str params))) .headers headers)
+      (.then (fn [res]
+               (let [res-body (convert/jsonDecode (.-body res))
+                     res-headers (.-headers res)]
+                 (condp = (.-statusCode res)
+                   200 (success res-headers res-body)
+                   ;; else 
+                   (error res-headers res-body)))))
+      (.catchError (fn [err]
+                     (when error
+                       (catch-error err))))))
+
+(defn post-data [url {:keys [headers params success error catch-error]}]
+  (-> (http/post (c.Uri/parse url) .headers headers .body (convert/jsonEncode params))
+      (.then (fn [res]
+               (let [res-body (convert/jsonDecode (.-body res))
+                     res-headers (.-headers res)]
+                 (condp = (.-statusCode res)
+                   200 (success res-headers res-body)
+                   ;; else 
+                   (error res-headers res-body)))))
+      (.catchError (fn [err]
+                     (when error
+                       (catch-error err))))))
