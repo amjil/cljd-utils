@@ -23,7 +23,7 @@
                        (catch-error err))))))
 
 (defn post-data [url {:keys [headers params success error catch-error]}]
-  (-> (http/post (c.Uri/parse url) .headers headers .body (convert/jsonEncode params))
+  (-> (http/post (c.Uri/parse (str url)) .headers headers .body (convert/jsonEncode params))
       (.then (fn [res]
                (let [res-body (convert/jsonDecode (.-body res))
                      res-headers (.-headers res)]
